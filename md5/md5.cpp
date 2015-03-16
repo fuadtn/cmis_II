@@ -11,7 +11,7 @@ int X[16];
 
 int FunctionF(int x, int y, int z)
 {
-	return ((x & y) | (~x &z));
+	return ((x & y) | (~x & z));
 }
 int FunctionG(int x, int y, int z)
 {
