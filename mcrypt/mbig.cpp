@@ -107,6 +107,19 @@ mbig::mbig(int p)
 		p /= 10;
 	} while (p);
 }
+
+mbig::mbig(std::ifstream &ifst)
+{
+	char s[MaxLength];
+	ifst >> s;
+
+	int i;
+	memset(a, 0, MaxLength);
+	for (n = 0; s[n] != 0; ++n);
+	for (i = 0; i < n; ++i)
+		a[i] = s[n - i - 1] - '0';
+}
+
 mbig::mbig(char *s)
 {
 	int i;
@@ -157,13 +170,27 @@ int mbig::max(int a, int b)
 mbig mbig::mpow(mbig a, mbig e, mbig n)
 {
 	mbig r(1);
-	while (e.cmp(0) == 1)
+	while (e > 0)
 	{
 		e = e - 1;
 		r = r * a;
 		r = r % n;
 	}
 	return r;
+}
+
+mbig mbig::mbpow(mbig a, mbig n, mbig m)
+{
+	mbig res(1);
+
+	while (n > 0)
+	{
+		if (n % 2 == 1) res = res * a % m;
+
+		a = a * a % m;
+		n = n / 2;
+	}
+	return res;
 }
 
 mbig mbig::msqrt()
@@ -179,7 +206,8 @@ mbig mbig::msqrt()
 
 	while (l < r + 1)
 	{
-		m = (l + r) / 2;
+		m = r + 1;
+		m = m / 2;
 		
 		if (m*m < t + 1)
 		{
@@ -225,26 +253,33 @@ int mbig::operator < (mbig p)
 	return 1;
 	return 0;
 }
-mbig mbig::operator ^ (mbig p)
+mbig mbig::operator ^ (mbig n)
 {
-	mbig r(1);
+	mbig res(1);
+	mbig a = *this;
 
-	mbig s = *this;
-	mbig u = p;
-
-	while (u.cmp(0) == 1)
+	while (n > 0)
 	{
-		u = u - 1;
-		r = r * s;
+		if (n % 2 == 1) res = res * a;
+
+		a = a * a;
+		n = n / 2;
 	}
-	return r;
+	return res;
 }
 mbig mbig::operator + (mbig p)
 {
-	mbig s;
-	s.n = max(n, p.n) + 1;
-	add(a, p.a, s.a, s.n);
-	return s;
+	n = max(n, p.n) + 1;
+	char c = 0;
+
+	for (int i = 0; i < n; ++i)
+	{
+		a[i] += p.a[i] + c;
+		c = a[i] / 10;
+		a[i] %= 10;
+	}
+	delete_zero(a, n);
+	return *this;
 }
 mbig mbig::operator - (mbig p)
 {
@@ -292,7 +327,7 @@ mbig mbig::operator << (int k)
 mbig mbig::operator >> (int k)
 {
 	mbig s;
-	s.n = n - k;
+	s.n = n - k; if (s.n <= 0) s.n = 1;
 	for (int i = k; i < n; ++i)
 		s.a[i - k] = a[i];
 	return s;
@@ -302,7 +337,8 @@ mbig mbig::last(int k)
 	mbig s;
 	s.n = k;
 	for (short i = 0; i < k; ++i)
-		s.a[i] = a[i];
+	s.a[i] = a[i];
+	delete_zero(s.a, s.n);
 	return s;
 }
 mbig mbig::karatsuba_mul(mbig p)
@@ -320,4 +356,19 @@ mbig mbig::karatsuba_mul(mbig p)
 
 	mbig res = ((abcd - ac - bd) << k) + (bd << (k << 1)) + ac;
 	return res;
+}
+
+void mbig::random(int bits)
+{
+	mbig l(0);
+	mbig b(2);
+	srand(time(0));
+
+	l = b ^ (bits + 1);
+	n = 0;
+	while (*this < l)
+	{
+		a[n] = rand() % 10;
+		n = n + 1;
+	}
 }
